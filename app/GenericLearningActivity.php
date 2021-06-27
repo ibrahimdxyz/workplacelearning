@@ -234,7 +234,7 @@ class GenericLearningActivity extends Model implements LearningActivityInterface
     // Note: DND, object comparison
     public function __toString()
     {
-        return $this->laa_id.'';
+        return $this->gla_id.'';
     }
 
     public function chain(): BelongsTo
@@ -265,7 +265,7 @@ class GenericLearningActivity extends Model implements LearningActivityInterface
     public function bookmark(): SavedLearningItem
     {
         $savedLearningItem = new SavedLearningItem();
-        $savedLearningItem->category = SavedLearningItem::CATEGORY_LAA;
+        $savedLearningItem->category = SavedLearningItem::CATEGORY_GLA;
         $savedLearningItem->item()->associate($this->gla_id);
         $savedLearningItem->student()->associate($this->workplaceLearningPeriod->student);
         $savedLearningItem->created_at = new \DateTimeImmutable();

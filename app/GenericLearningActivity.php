@@ -2,25 +2,37 @@
 
 namespace App;
 
+use App\Interfaces\Bookmarkable;
+use App\Interfaces\LearningActivityInterface;
+use Carbon\Carbon;use DateTime;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\DB;
 
-class GenericLearningActivity extends Model
+
+class GenericLearningActivity extends Model implements LearningActivityInterface, Bookmarkable
 {
 
 
-    protected $fillable = ['workplaceLearningPeriod', 'feedback', 'resourcePerson', 'resourceMaterial', 'category', 'difficulty','status', ];
+    // Disable using created_at and updated_at columns
+    public $timestamps = false;
+
+    // Override the table used for the User Model
+    protected $table = 'genericlearningactivity';
+
+    // Override the primary key column
+    protected $primaryKey = 'gla_id';
+
+
+    protected $fillable = ['gla_id','wplp_id', 'date', 'workplaceLearningPeriod', 'feedback', 'resourcePerson', 'resourceMaterial', 'category', 'difficulty','status', ];
 
 
     protected $appends = ['duration', 'description', 'res_material_detail', 'extra_feedback', 'situation', 'lessons_learned', 'support_wp', 'support_ed'];
 
 
-    protected $dates = [
-        'created_at',
-        'updated_at',
-        'deleted_at'
-    ];
+    protected $dates = ['date'];
 
 
     // Custom attributes
@@ -172,6 +184,66 @@ class GenericLearningActivity extends Model
             'difficulty',
             'status',
         ];
+    }
+
+
+
+    // Note: DND, object comparison
+    public function __toString()
+    {
+        return $this->laa_id.'';
+    }
+
+    public function chain(): BelongsTo
+    {
+        return $this->belongsTo(Chain::class, 'chain_id', 'id');
+    }
+
+    public function isWithinWplpDates(): bool
+    {
+        return $this->date->greaterThanOrEqualTo($this->workplaceLearningPeriod->startdate)
+            && $this->date->lessThanOrEqualTo($this->workplaceLearningPeriod->enddate);
+    }
+
+
+    public function getDescription(): string
+    {
+        return $this->situation;
+    }
+
+    public function getDate(): DateTime
+    {
+        return $this->date->toDateTime();
+    }
+
+
+
+
+    public function bookmark(): SavedLearningItem
+    {
+        $savedLearningItem = new SavedLearningItem();
+        $savedLearningItem->category = SavedLearningItem::CATEGORY_LAA;
+        $savedLearningItem->item()->associate($this->gla_id);
+        $savedLearningItem->student()->associate($this->workplaceLearningPeriod->student);
+        $savedLearningItem->created_at = new \DateTimeImmutable();
+        $savedLearningItem->updated_at = new \DateTimeImmutable();
+
+        return $savedLearningItem;
+    }
+
+
+    public function bookmarkCheck($gla_id= 0): array
+    {
+        $bookmarkCheck = array();
+        $student_nr = $this->bookmark()->student_id;
+        $bookmarked = DB::table('saved_learning_items')->where([
+            ['item_id', '=', $gla_id],
+            ['student_id', '=', $student_nr],
+        ])->get();
+        if(count($bookmarked) > 0) {
+            $bookmarkCheck[] = 1;
+        }
+        return $bookmarkCheck;
     }
 
 }

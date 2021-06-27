@@ -4,14 +4,57 @@ namespace App;
 
 use App\Interfaces\Bookmarkable;
 use App\Interfaces\LearningActivityInterface;
-use Carbon\Carbon;use DateTime;
-use Illuminate\Database\Eloquent\Collection;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * App\GenericLearningActivity.
+ *
+ *
+ * @property int $gla_id
+ * @property int $wplp_id
+ * @property Carbon $date
+ * @property int $res_person_id
+ * @property int $res_material_id
+ * @property int $category_id
+ * @property int $difficulty_id
+ * @property int $status_id
+ * @property int $timeslot_id
+ * @property int $learninggoal_id
+ * @property int $chain_id
+ * @property string $support_wp
+ * @property string $support_ed
+ * @property Feedback $feedback
+ * @property Timeslot $timeslot
+ * @property ResourcePerson $resourcePerson
+ * @property ResourceMaterial $resourceMaterial
+ * @property LearningGoal $learningGoal
+ * @property \App\WorkplaceLearningPeriod $workplaceLearningPeriod
+ * @property string learningactivity_name
+ *
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\GenericLearningActivity whereDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\GenericLearningActivity whereGlaId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\GenericLearningActivity whereResMaterialDetail($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\GenericLearningActivity whereResMaterialId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\GenericLearningActivity whereResPersonId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\GenericLearningActivity whereSituation($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\GenericLearningActivity whereTimeslotId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\GenericLearningActivity whereWplpId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\GenericLearningActivity whereLearningActivityName($value)
+ *  @mixin \Eloquent
+ *
+ * @property \App\Reflection\Models\ActivityReflection $reflection
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\GenericLearningActivity newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\GenericLearningActivity newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\GenericLearningActivity query()
 
+ *
+ * */
 class GenericLearningActivity extends Model implements LearningActivityInterface, Bookmarkable
 {
 
@@ -26,7 +69,7 @@ class GenericLearningActivity extends Model implements LearningActivityInterface
     protected $primaryKey = 'gla_id';
 
 
-    protected $fillable = ['gla_id','wplp_id', 'date', 'workplaceLearningPeriod', 'feedback', 'resourcePerson', 'resourceMaterial', 'category', 'difficulty','status', ];
+    protected $fillable = ['gla_id','wplp_id', 'date', 'workplaceLearningPeriod', 'feedback', 'resourcePerson', 'resourceMaterial', 'category', 'difficulty','status', 'learningactivity_name', ];
 
 
     protected $appends = ['duration', 'description', 'res_material_detail', 'extra_feedback', 'situation', 'lessons_learned', 'support_wp', 'support_ed'];

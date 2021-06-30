@@ -6,8 +6,10 @@ namespace App\Services;
 
 use App\Competence;
 use App\Evidence;
+use App\GenericLearningActivity;
 use App\LearningActivityActing;
 use App\Reflection\Models\ActivityReflectionField;
+use Carbon\Carbon;
 use PhpOffice\PhpWord\Element\Section;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\Settings;
@@ -60,7 +62,7 @@ class ActingActivityExporter
      * Here we add each activity to the document
      * It is all done in this function because splitting it doesn't make much sense for this.
      */
-    private function addActivityToSection(LearningActivityActing $activity, int $key, $arguments): void
+    private function addActivityToSection(GenericLearningActivity $activity, int $key, $arguments): void
     {
         /** @var Section $section */
         $section = $arguments['section'];
@@ -70,9 +72,9 @@ class ActingActivityExporter
 
         $section->addPageBreak();
 
-        // Add title
-        $section->addTitle("{$activity->date->format('d-m-Y')} - {$activity->timeslot->localizedLabel()}");
-
+        $date = Carbon::parse($activity->column()->where("name", "date")->first()->column_data()->data_as_string)->format('d-m-Y');
+        // Add title // WHERE COLUMN
+        $section->addTitle("{$activity->$date} - {$activity->timeslot->localizedLabel()}");
         // Add subtitle
         $personText = $activity->resourcePerson->isAlone() ? __('export_laa.alone') : __('export_laa.with',
             ['person' => $activity->resourcePerson->localizedLabel()]);
@@ -89,16 +91,17 @@ class ActingActivityExporter
         $theoryRun->addText(__('export_laa.theory').': ', ['bold' => true]);
         if ($activity->resourceMaterial) {
             $theoryRun->addText($activity->resourceMaterial->rm_label);
+            $resMaterialDetail = $activity->column()->where("name", "res_material_detail")->first()->column_data()->data_as_string;
             // Add resource material detail if it exists
-            if ($activity->res_material_detail) {
+            if ($resMaterialDetail) {
                 // If it is an URL, make it clickable and only shown domain
-                if (filter_var($activity->res_material_detail, FILTER_VALIDATE_URL)) {
-                    $domain = parse_url($activity->res_material_detail, PHP_URL_HOST);
+                if (filter_var($resMaterialDetail, FILTER_VALIDATE_URL)) {
+                    $domain = parse_url($resMaterialDetail, PHP_URL_HOST);
                     $theoryRun->addText(' - ');
-                    $theoryRun->addLink($activity->res_material_detail, $domain,
+                    $theoryRun->addLink($resMaterialDetail, $domain,
                         ['color' => '0000FF', 'underline' => Font::UNDERLINE_SINGLE]);
                 } else {
-                    $theoryRun->addText(" ({$activity->res_material_detail})");
+                    $theoryRun->addText(" ({$resMaterialDetail})");
                 }
             }
         } else {
@@ -125,29 +128,34 @@ class ActingActivityExporter
 
         $section->addTextBreak();
         $section->addText(__('export_laa.situation').':', ['bold' => true]);
-        $section->addText($activity->situation);
+        $situation = $activity->column()->where("name", "situation")->first()->column_data()->data_as_string;
+        $section->addText($activity->$situation);
+
+        $lessonsLearned = $activity->column()->where("name", "lessonslearned")->first()->column_data()->data_as_string;
+        $supportWp = $activity->column()->where("name", "support_wp")->first()->column_data()->data_as_string;
+        $supportEd = $activity->column()->where("name", "support")->first()->column_data()->data_as_string;
 
         // Add short reflection if exists
-        if ($activity->lessonslearned || $activity->support_wp || $activity->support_ed) {
+        if ($activity->$lessonsLearned || $activity->$supportWp || $activity->$supportEd) {
             $section->addTextBreak(2);
             $section->addTitle(__('export_laa.short-reflection'), 3);
 
-            if ($activity->lessonslearned) {
+            if ($activity->$lessonsLearned) {
                 $section->addTextBreak();
                 $section->addText(__('export_laa.lessons-learned').':', ['bold' => true]);
-                $section->addText($activity->lessonslearned);
+                $section->addText($activity->$lessonsLearned);
             }
 
-            if ($activity->support_wp) {
+            if ($activity->$supportWp) {
                 $section->addTextBreak();
                 $section->addText(__('export_laa.support-wp').':', ['bold' => true]);
-                $section->addText($activity->support_wp);
+                $section->addText($activity->$supportWp);
             }
 
-            if ($activity->support_ed) {
+            if ($activity->$supportEd) {
                 $section->addTextBreak();
                 $section->addText(__('export_laa.support-ed').':', ['bold' => true]);
-                $section->addText($activity->support_ed);
+                $section->addText($activity->$supportEd);
             }
         }
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository\Eloquent;
 
-//use App\Evidence;
+use App\Evidence;
 use App\GenericLearningActivity ;
 use App\Student;
 
@@ -13,12 +13,12 @@ class GenericLearningActivityRepository
     /**
      * @var EvidenceRepository
      */
-//    private EvidenceRepository $evidenceRepository;
-//
-//    public function __construct(EvidenceRepository $evidenceRepository)
-//    {
-//        $this->evidenceRepository = $evidenceRepository;
-//    }
+    private EvidenceRepository $evidenceRepository;
+
+    public function __construct(EvidenceRepository $evidenceRepository)
+    {
+        $this->evidenceRepository = $evidenceRepository;
+    }
 
     /**
      * @param int $id
@@ -62,9 +62,7 @@ class GenericLearningActivityRepository
     public function getActivitiesForStudent(Student $student): array
     {
         return $student->getCurrentWorkplaceLearningPeriod()->genericLearningActivity()
-            // TODO: Later wijzigen
-            //->with('category', 'difficulty', 'status', 'resourcePerson', 'resourceMaterial', 'chain', 'feedback')
-            //->with('timeslot', 'resourcePerson', 'resourceMaterial', 'learningGoal', 'competence')
+            ->with('category', 'timeslot', 'difficulty','learningGoal','competence','status', 'resourcePerson', 'resourceMaterial', 'chain', 'feedback')
             ->orderBy('date', 'DESC')
             ->get()->all();
     }
@@ -84,9 +82,9 @@ class GenericLearningActivityRepository
 
         $dateOfLastActivity = $lastActiveActivity->date;
 
-//TODO: genericlearningactivity heeft geen relatie meer met de tabellen status en difficulty
+
         return $student->getCurrentWorkplaceLearningPeriod()->genericLearningActivity()
-            ->with('category', 'difficulty', 'status', 'resourcePerson', 'resourceMaterial', 'chain', 'feedback')
+            ->with('category', 'resourcePerson', 'resourceMaterial', 'chain', 'feedback','timeslot', 'learningGoal', 'competence')
             ->where('date', '=', $dateOfLastActivity)
             ->get()->all();
     }
@@ -98,13 +96,17 @@ class GenericLearningActivityRepository
     public function delete(GenericLearningActivity $genericLearningActivity): bool
     {
         try {
-//              TODO: niet elke gla heeft een feedback en/of competence
-//              $genericLearningActivity->competence()->detach();
-//              $learningActivityProducing->feedback()->delete();
+            $genericLearningActivity->competence->each(function (Competence $competence) {
+                $this->competenceRepository->delete($competence);
+            });
 
-//                $genericLearningActivity->evidence->each(function (Evidence $evidence) {
-//                $this->evidenceRepository->delete($evidence);
-//            });
+            $genericLearningActivity->feedback->each(function (Feedback $feedback) {
+                $this->feedbackRepository->delete($feedback);
+            });
+
+            $genericLearningActivity->evidence->each(function (Evidence $evidence) {
+                $this->evidenceRepository->delete($evidence);
+            });
 
 
             return $genericLearningActivity->delete();
@@ -122,9 +124,9 @@ class GenericLearningActivityRepository
         $activity = $student->getCurrentWorkplaceLearningPeriod()->genericLearningActivity()->orderBy('date',
             'ASC')->first();
 
-//        if (!$activity instanceof LearningActivityProducing && $activity !== null) {
-//            throw new \RuntimeException('Expected result to be null or LearningActivityProducing, instead '.\get_class($activity));
-//        }
+        if (!$activity instanceof GenericLearningActivity && $activity !== null) {
+            throw new \RuntimeException('Expected result to be null or GenericLearningActivity, instead '.\get_class($activity));
+        }
 
         return $activity;
     }
@@ -138,9 +140,9 @@ class GenericLearningActivityRepository
         $activity = $student->getCurrentWorkplaceLearningPeriod()->genericLearningActivity()->orderBy('date',
             'desc')->first();
 
-//        if (!$activity instanceof LearningActivityProducing && $activity !== null) {
-//            throw new \RuntimeException('Expected result to be null or LearningActivityProducing, instead '.\get_class($activity));
-//        }
+        if (!$activity instanceof GenericLearningActivity && $activity !== null) {
+            throw new \RuntimeException('Expected result to be null or GenericLearningActivity, instead '.\get_class($activity));
+        }
 
         return $activity;
     }

@@ -32,7 +32,7 @@ class Column extends Model
 
     public function fieldType(): BelongsTo
     {
-        return $this->belongsTo(Fieldtype::class, 'fieldtype_id', 'fieldtype');
+        return $this->belongsTo(Fieldtype::class, 'fieldtype_id', 'fieldtype_id');
     }
 
     public function column_data(): HasOne

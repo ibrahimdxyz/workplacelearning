@@ -16,7 +16,7 @@ interface LearningActivityInterface
 {
     public function workplaceLearningPeriod(): BelongsTo;
 
-    public function getDescription(): string;
+//    public function getDescription(): string;
 
-    public function getDate(): DateTime;
+//    public function getDate(): DateTime;
 }

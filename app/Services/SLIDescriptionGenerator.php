@@ -5,8 +5,10 @@ namespace App\Services;
 
 
 use App\Interfaces\LearningActivityInterface;
+use App\Repository\Eloquent\GenericLearningActivityRepository;
 use App\Repository\Eloquent\LearningActivityActingRepository;
 use App\Repository\Eloquent\LearningActivityProducingRepository;
+use App\Repository\Eloquent\GenericLearningActivityRepositoryRepository;
 use App\Repository\Eloquent\TipRepository;
 use App\SavedLearningItem;
 use App\Tips\Services\TipEvaluator;
@@ -21,12 +23,16 @@ class SLIDescriptionGenerator
 
     private $producingRepository;
 
-    public function __construct(TipEvaluator $evaluator, TipRepository $tipRepository, LearningActivityActingRepository $actingRepository, LearningActivityProducingRepository $producingRepository)
+    private $genericRepository;
+
+    public function __construct(TipEvaluator $evaluator, TipRepository $tipRepository, LearningActivityActingRepository $actingRepository, LearningActivityProducingRepository $producingRepository, GenericLearningActivityRepository $genericRepository)
     {
         $this->tipEvaluator = $evaluator;
         $this->tipRepository = $tipRepository;
         $this->actingRepository = $actingRepository;
         $this->producingRepository = $producingRepository;
+        $this->genericRepository = $genericRepository;
+
     }
 
     public function getDescriptionForSLI(SavedLearningItem $savedLearningItem): string
@@ -41,11 +47,15 @@ class SLIDescriptionGenerator
 
     private function getLearningActivity(string $type, int $id): LearningActivityInterface
     {
-        if($type === SavedLearningItem::CATEGORY_LAA) {
-            return $this->actingRepository->get($id);
+        if($type === SavedLearningItem::CATEGORY_GLA) {
+            //return $this->actingRepository->get($id);
+            return $this->genericRepository->get($id);
+
         }
 
         // Other cases currently always LAP
-        return $this->producingRepository->get($id);
+        //return $this->producingRepository->get($id);
+        return $this->genericRepository->get($id);
+
     }
 }

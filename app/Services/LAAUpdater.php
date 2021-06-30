@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Column;
+use App\column_data;
+use App\fieldtype;
+use App\GenericLearningActivity;
 use App\LearningActivityActing;
 use App\Reflection\Services\Factories\ActivityReflectionFactory;
 use App\Reflection\Services\Updaters\ActivityReflectionUpdater;
-use App\Repository\Eloquent\LearningActivityActingRepository;
+//use App\Repository\Eloquent\LearningActivityActingRepository;
+use App\Repository\Eloquent\GenericLearningActivityRepository;
 use Carbon\Carbon;
 
 class LAAUpdater
@@ -20,54 +25,101 @@ class LAAUpdater
      * @var ActivityReflectionFactory
      */
     private $activityReflectionFactory;
+//    /**
+//     * @var LearningActivityActingRepository
+//     */
+//    private $learningActivityActingRepository;
     /**
-     * @var LearningActivityActingRepository
+     * @var GenericLearningActivityRepository
      */
-    private $learningActivityActingRepository;
+    private $genericLearningActivityRepository;
+
 
     public function __construct(
         ActivityReflectionUpdater $activityReflectionUpdater,
         ActivityReflectionFactory $activityReflectionFactory,
-        LearningActivityActingRepository $learningActivityActingRepository
+        GenericLearningActivityRepository $genericLearningActivityRepository
+
     ) {
         $this->activityReflectionUpdater = $activityReflectionUpdater;
         $this->activityReflectionFactory = $activityReflectionFactory;
 
-        $this->learningActivityActingRepository = $learningActivityActingRepository;
+        $this->genericLearningActivityRepository = $genericLearningActivityRepository;
     }
 
-    public function update(LearningActivityActing $learningActivityActing, array $data): bool
+    public function update(GenericLearningActivity $genericLearningActivity, array $data): bool
     {
-        $learningActivityActing->date = Carbon::parse($data['date'])->format('Y-m-d');
-        $learningActivityActing->situation = $data['description'];
+        //choosing fieldTypes from database
+        $radiobutton = Fieldtype::where("fieldtype","radiobutton")->first();
+        $text = Fieldtype::where("fieldtype","text")->first();
+        $datePicker = Fieldtype::where("fieldtype","date")->first();
+        $button = Fieldtype::where("fieldtype","date")->first();
 
-        $learningActivityActing->lessonslearned = $data['learned'];
-        $learningActivityActing->support_wp = $data['support_wp'];
-        $learningActivityActing->support_ed = $data['support_ed'];
+        if (isset($data['datum'])) {
+            $column = $this->createColumn("date", null, Carbon::parse($data['datum'])->format('Y-m-d'), $datePicker, "date");
+            $genericLearningActivity->column()->associate($column);
+        }
+        if (isset($data['description'])) {
+            $column = $this->createColumn("situation", null, $data['description'], $text, "string");
+            $genericLearningActivity->column()->associate($column);
+        }
+        if (isset($data['learned'])) {
+            $column = $this->createColumn("lessonslearned", null, $data['learned'], $text, "string");
+            $genericLearningActivity->column()->associate($column);
+        }
+        if (isset($data['support_wp'])) {
+            $column = $this->createColumn("support_wp", null, $data['support_wp'], $text, "string");
+            $genericLearningActivity->column()->associate($column);
+        }
+        if (isset($data['support_ed'])) {
+            $column = $this->createColumn("support_ed", null, $data['support_ed'], $text, "string");
+            $genericLearningActivity->column()->associate($column);
+        }
 
-        $learningActivityActing->timeslot()->associate($data['timeslot']);
-        $learningActivityActing->resourcePerson()->associate($data['res_person']);
-        $learningActivityActing->learningGoal()->associate($data['learning_goal']);
+        $genericLearningActivity->timeslot()->associate($data['timeslot']);
+        $genericLearningActivity->resourcePerson()->associate($data['res_person']);
+        $genericLearningActivity->learningGoal()->associate($data['learning_goal']);
 
-        $learningActivityActing->competence()->sync($data['competence']);
+        $genericLearningActivity->competence()->sync($data['competence']);
+
 
         if ($data['res_material'] === 'none') {
-            $learningActivityActing->resourceMaterial()->dissociate();
+            $genericLearningActivity->resourceMaterial()->dissociate();
         } else {
-            $learningActivityActing->resourceMaterial()->associate($data['res_material']);
+            $genericLearningActivity->resourceMaterial()->associate($data['res_material']);
         }
-        $learningActivityActing->res_material_detail = $data['res_material_detail'];
 
+        $genericLearningActivity->res_material_detail = $data['res_material_detail'];
+        if (isset($data['res_material_detail'])) {
+            $columnOptions = "['persoon','internet','boek', 'alleen']";
+            $column = $this->createColumn("res_material_detail",$columnOptions, $data['res_material_detail'], $button, "string");
+            $genericLearningActivity->column()->associate($column);
+        }
         // If a reflection already exists the user is trying to update its contents
         if (isset($data['reflection'])) {
-            if ($learningActivityActing->reflection) {
-                $this->activityReflectionUpdater->update($learningActivityActing->reflection, $data['reflection']);
+            if ($genericLearningActivity->reflection) {
+                $this->activityReflectionUpdater->update($genericLearningActivity->reflection, $data['reflection']);
             } else {
                 // If no reflection exists (manually removed or creating afterwards) we create one instead
-                $reflection = $this->activityReflectionFactory->create($data['reflection'], $learningActivityActing);
+                $reflection = $this->activityReflectionFactory->create($data['reflection'], $genericLearningActivity);
             }
         }
 
-        return $this->learningActivityActingRepository->save($learningActivityActing);
+        return $this->genericLearningActivityRepository->save($genericLearningActivity);
+    }
+    private function createColumn($name, $columnOptions, $data, $fieldType, $dataType) {
+        $column = new Column;
+        $column->name = $name;
+        $column->columnOptions = $columnOptions;
+        $column->fieldType()->associate($fieldType);
+        $column->save();
+
+        $columnData = new column_data();
+        $columnData->column()->associate($column);
+        $columnData->data_as_string = $data;
+        $columnData->dataType = $dataType;
+        $columnData->save();
+
+        return $column;
     }
 }

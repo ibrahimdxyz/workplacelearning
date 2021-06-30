@@ -28,7 +28,7 @@ class LAPUpdater
 
     public function update(Genericlearningactivity $genericlearningactivity, $data): bool
     {
-        //choosing fieldtypes from database
+        //choosing fieldTypes from database
         $radiobutton = Fieldtype::where("fieldtype","radiobutton")->first();
         $text = Fieldtype::where("fieldtype","text")->first();
         $datePicker = Fieldtype::where("fieldtype","date")->first();

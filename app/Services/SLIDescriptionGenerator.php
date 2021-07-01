@@ -19,18 +19,12 @@ class SLIDescriptionGenerator
 
     private $tipRepository;
 
-    private $actingRepository;
-
-    private $producingRepository;
-
     private $genericRepository;
 
-    public function __construct(TipEvaluator $evaluator, TipRepository $tipRepository, LearningActivityActingRepository $actingRepository, LearningActivityProducingRepository $producingRepository, GenericLearningActivityRepository $genericRepository)
+    public function __construct(TipEvaluator $evaluator, TipRepository $tipRepository,  GenericLearningActivityRepository $genericRepository)
     {
         $this->tipEvaluator = $evaluator;
         $this->tipRepository = $tipRepository;
-        $this->actingRepository = $actingRepository;
-        $this->producingRepository = $producingRepository;
         $this->genericRepository = $genericRepository;
 
     }
@@ -48,13 +42,10 @@ class SLIDescriptionGenerator
     private function getLearningActivity(string $type, int $id): LearningActivityInterface
     {
         if($type === SavedLearningItem::CATEGORY_GLA) {
-            //return $this->actingRepository->get($id);
             return $this->genericRepository->get($id);
 
         }
 
-        // Other cases currently always LAP
-        //return $this->producingRepository->get($id);
         return $this->genericRepository->get($id);
 
     }
